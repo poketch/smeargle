@@ -1,7 +1,24 @@
+"""
+    smeargle.py
+    Copyright (C) 2024 Poketch
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+"""
+
 from typing import Tuple, List, Callable, BinaryIO, Self
 import zlib
 import struct
-import functools
 from enum import Enum
 
 Pixel = Tuple[int, int, int]
@@ -20,14 +37,17 @@ BLUE: Pixel = (0, 0, 255, 255)
 PURPLE: Pixel = (255, 0, 255, 255)
 BLANK: Pixel = (0, 0, 0, 0)
 
+
 class ColorType(Enum):
-    RGB = 2 
+    RGB = 2
     RGBA = 6
+
 
 class Vec2:
     def __init__(self: Self, x: int, y: int) -> None:
         self.x = x
         self.y = y
+
 
 class Image:
     pass
@@ -36,7 +56,8 @@ class Image:
 
         self.width = width
         self.height = height
-        self._data: List[List[Pixel]] = data if data is not None else [[BLANK for _ in range(width)] for _ in range(height)]
+        self._data: List[List[Pixel]] = data if data is not None else [
+            [BLANK for _ in range(width)] for _ in range(height)]
 
     def __iter__(self: Self):
         return iter(self._data)
@@ -62,7 +83,7 @@ class Image:
         for i in range(len(self)):
             for j in range(len(self[i])):
 
-                if j >= pos.x and j <= pos.x + length and i >= pos.y and i <= pos.y + height: 
+                if j >= pos.x and j <= pos.x + length and i >= pos.y and i <= pos.y + height:
                     self.draw(i, j, color)
 
     def draw_circle(self: Self, pos: Vec2, radius: int, color: Pixel) -> None:
@@ -70,11 +91,10 @@ class Image:
         for i in range(len(self)):
             for j in range(len(self[i])):
 
-                if (i-pos.x)*(i-pos.x) + (j-pos.y)*(j-pos.y) <= radius*radius: 
+                if (i-pos.x)*(i-pos.x) + (j-pos.y)*(j-pos.y) <= radius*radius:
                     self.draw(i, j, color)
 
     def draw_line(self: Self, p1: Vec2, p2: Vec2, thickness: int, color: Pixel) -> None:
-
         """
         draw according to y = mx + (c+t)
         """
@@ -85,10 +105,10 @@ class Image:
         for i in range(len(self)):
             for j in range(len(self[i])):
 
-                if i >= m*j + c  - thickness//2 and i <= m*j + c  + thickness//2: 
+                if i >= m*j + c - thickness//2 and i <= m*j + c + thickness//2:
                     self.draw(i, j, color)
 
-    def draw_triangle(self: Self, p1: Vec2, p2: Vec2, p3: Vec2, color: Pixel) -> None: 
+    def draw_triangle(self: Self, p1: Vec2, p2: Vec2, p3: Vec2, color: Pixel) -> None:
         """
         Based on: https://jtsorlinis.github.io/rendering-tutorial/
         Shoelace Area of a triangle: |(1/2)*( (x_b - x_a)*(y_c - y_a) - (y_b - y_a)*(x_c - x_a)) | 
@@ -104,8 +124,9 @@ class Image:
 
         Determining whether a point is in the triangle is thus
         finding out whether all the edgefunctions are posistive for an arbitrary point p 
-        """       
-        edgeFunction: Callable[[Vec2, Vec2, Vec2], int] = lambda p1, p2, p3: (p2.x - p1.x)*(p3.y - p1.y) - (p2.y - p1.y)*(p3.x - p1.x)
+        """
+        edgeFunction: Callable[[Vec2, Vec2, Vec2], int] = lambda p1, p2, p3: (
+            p2.x - p1.x)*(p3.y - p1.y) - (p2.y - p1.y)*(p3.x - p1.x)
 
         for i in range(len(self)):
             for j in range(len(self[i])):
@@ -114,9 +135,9 @@ class Image:
                 bcp = edgeFunction(p2, p3, p)
                 cap = edgeFunction(p3, p1, p)
 
-                if abp >= 0 and bcp >= 0 and cap >= 0: 
+                if abp >= 0 and bcp >= 0 and cap >= 0:
                     self.draw(i, j, color)
-        
+
 
 class PNG:
 
@@ -124,7 +145,8 @@ class PNG:
 
         assert len(img) > 0, "Expected a non-zero sized image"
         d = b'\x89PNG\r\n\x1A\n'  # Header
-        d += self._gen_chunk(b'IHDR', self._ihdr(len(img[0]), len(img), 8, ColorType.RGBA))
+        d += self._gen_chunk(b'IHDR',
+                             self._ihdr(len(img[0]), len(img), 8, ColorType.RGBA))
         d += self._gen_chunk(b'IDAT', self._idat(img))
         d += self._gen_chunk(b'IEND', b'')
 
@@ -171,13 +193,14 @@ class PNG:
 
 def test() -> None:
 
-    img = Image(400,400)
+    img = Image(400, 400)
     img.draw_rect(Vec2(400/2 - 200/2, 400/2 - 200/2), 200, 200, RED)
     img.draw_circle(Vec2(200, 200), 30, GREEN)
     img.draw_line(Vec2(400, 0), Vec2(0, 400), 6, BLUE)
     img.draw_triangle(Vec2(100, 300), Vec2(100, 200), Vec2(200, 300), PURPLE)
     png = PNG(img)
     png.save_png("foo.png")
+
 
 if __name__ == "__main__":
 
